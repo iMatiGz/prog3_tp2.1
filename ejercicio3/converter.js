@@ -6,11 +6,48 @@ class Currency {
 }
 
 class CurrencyConverter {
-    constructor() {}
+    constructor(apiUrl) {
+        this.apiUrl = apiUrl
+        this.currencies = []
+    }
 
-    getCurrencies(apiUrl) {}
+    async getCurrencies() {
+        const result = await fetch(`${this.apiUrl}/currencies`)
+        const data = await result.json()
+        
+        for (let key in data) {
+            this.currencies.push(new Currency(key, data[key]))
+        }
+    }
 
-    convertCurrency(amount, fromCurrency, toCurrency) {}
+    async convertCurrency(amount, fromCurrency, toCurrency) {
+        if (fromCurrency.code == toCurrency.code) return amount
+
+        try {
+            const request = await fetch(`${this.apiUrl}/latest?amount=${amount}&from=${fromCurrency.code}&to=${toCurrency.code}`)
+            const result = await request.json()
+
+            const rates = result.rates
+            const key = Object.keys(rates)
+            return rates[key]
+        }
+        catch (err) {
+            console.log('Error: ', err);
+            return null
+        }
+    }
+
+    async historicalCurrency(date) {
+        try {
+            const request = await fetch(`${this.apiUrl}/${date}`)
+            if (!request.ok) return null
+            return request.json()
+        }
+        catch (err) {
+            console.log('Error: ', err);
+            return null
+        }
+    }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -18,6 +55,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const resultDiv = document.getElementById("result");
     const fromCurrencySelect = document.getElementById("from-currency");
     const toCurrencySelect = document.getElementById("to-currency");
+    const additionalBtn = document.getElementById("additional-btn")
+    const dateInput = document.getElementById("date-input")
 
     const converter = new CurrencyConverter("https://api.frankfurter.app");
 
@@ -61,4 +100,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         }
     }
+    
+    additionalBtn.addEventListener('click', async () => {
+        const result = await converter.historicalCurrency(dateInput.value)
+        if (!result) {
+            resultDiv.textContent = 'Escribiste mal la fecha'
+            return
+        }
+
+        console.log(result);
+        resultDiv.textContent = '-- Los resultados se están mostrando en consola --'
+    })
 });

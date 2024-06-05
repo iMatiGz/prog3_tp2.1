@@ -1,6 +1,32 @@
-class Customer {}
+class Customer {
+    constructor(id, name, email) {
+        this.id = id
+        this.name = name
+        this.email = email
+    }
 
-class Reservation {}
+    get info () { return `Nombre: ${this.name} - Email: ${this.email}` }
+}
+
+class Reservation {
+    constructor(id, customer, date, guests) {
+        this.id = id
+        this.customer = customer
+        this.date = date
+        this.guests = guests
+    }
+
+    get info () { 
+        return `
+        Fecha y hora de la reserva: ${this.date} - 
+        Cliente: ${this.customer.info} - 
+        Comensales: ${this.guests}`
+    }
+
+    static validateReservation (date, guests) {
+        return new Date(date) > new Date() && guests > 0
+    }
+}
 
 class Restaurant {
     constructor(name) {

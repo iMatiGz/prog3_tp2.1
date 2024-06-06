@@ -43,3 +43,26 @@ img {
     max-height: 100%;
     object-fit: contain;
 }
+
+.movements-counter-wrapper {
+    background: var(--bulma-scheme-main);
+}
+
+#movements-counter {
+    color: #f0f0f0;
+    font-size: 25px;
+    font-weight: 600;
+}
+
+#timer {
+    margin: 30px 0;
+    font-size: 25px;
+    font-weight: 600;
+    color: #f0f0f0;
+}
+
+#points {
+    color: #f0f0f0;
+    font-size: 25px;
+    font-weight: 600;
+}

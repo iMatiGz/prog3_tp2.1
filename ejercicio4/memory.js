@@ -31,6 +31,14 @@ class Card {
         const cardElement = this.element.querySelector(".card");
         cardElement.classList.remove("flipped");
     }
+
+    toggleFlip() {
+        if (this.isFlipped) this.#unflip()
+        else this.#flip()
+        this.isFlipped = !this.isFlipped
+    }
+
+    matches(otherCard) { return this.name == otherCard.name }
 }
 
 class Board {
@@ -71,12 +79,47 @@ class Board {
 
     onCardClicked(card) {
         if (this.onCardClick) {
-            this.onCardClick(card);
+            this.onCardClick(card)
         }
+    }
+
+    shuffleCards() {
+        this.cards = this.cards
+            .map((a) => ({ sort: Math.random(), value: a }))
+            .sort((a, b) => a.sort - b.sort)
+            .map((a) => a.value)
+    }
+
+    flipDownAllCards() {
+        this.cards.forEach(card => {
+            if (card.isFlipped) {
+                card.toggleFlip()
+                card.isFlipped = false
+            }
+        })
+    }
+
+    reset() {
+        this.flipDownAllCards()
+        this.shuffleCards()
+        this.render()
+    }
+
+    setOnCardClick(callback) {
+        this.onCardClick = callback
     }
 }
 
 class MemoryGame {
+
+    movementsCounter = document.getElementById("movements-counter")
+    timerElement = document.getElementById("timer")
+    pointsElement = document.getElementById("points")
+    movementsPlayed = 0
+    timer = 0
+    playedTime = 0
+    timeIsRunning = false
+
     constructor(board, flipDuration = 500) {
         this.board = board;
         this.flippedCards = [];
@@ -88,8 +131,9 @@ class MemoryGame {
             );
         }
         this.flipDuration = flipDuration;
-        this.board.onCardClick = this.#handleCardClick.bind(this);
+        this.board.setOnCardClick(this.#handleCardClick.bind(this))
         this.board.reset();
+        this.resetTimer()
     }
 
     #handleCardClick(card) {
@@ -98,9 +142,67 @@ class MemoryGame {
             this.flippedCards.push(card);
 
             if (this.flippedCards.length === 2) {
+                this.movementsCounter.innerText = `Número de intentos: ${this.movementsPlayed + 1}`
+                this.movementsPlayed++
                 setTimeout(() => this.checkForMatch(), this.flipDuration);
             }
         }
+    }
+
+    checkForWin() {
+        if (this.matchedCards.length == this.board.cards.length / 2) {
+            this.stopTimer()
+            this.timerElement.textContent = `Felicidades!!! Tardaste ${this.playedTime} seg.`
+            this.pointsElement.textContent = `Tus Puntos son: ${Math.round(this.playedTime / this.movementsPlayed * 100)}`
+        }
+    }
+
+    checkForMatch() {
+        if (this.flippedCards[0].matches(this.flippedCards[1])) { this.matchedCards.push(this.flippedCards) }
+        else {
+            this.flippedCards.forEach(card => card.toggleFlip())
+        }
+        this.flippedCards = []
+        this.checkForWin()
+    }
+
+    sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)) }
+
+    stopTimer() { this.timeIsRunning = false }
+
+    async startTimer() {
+        this.timer = Date.now()
+        this.timeIsRunning = true
+        while (this.timeIsRunning) {
+            this.playedTime = Math.floor((Date.now() - this.timer) / 1000)
+            this.updateTimer()
+            await this.sleep(1000)
+        }
+    }
+
+    updateTimer() {
+        if (this.timerElement) this.timerElement.textContent = `Tiempo transcurrido: ${this.playedTime} seg.`
+    }
+
+    resetTimer() {
+        this.stopTimer()
+        this.playedTime = 0
+        this.updateTimer()
+        this.startTimer()
+    }
+
+    resetMovements() {
+        this.movementsPlayed = 0
+        this.movementsCounter.innerText = 'Número de intentos: 0'
+    }
+
+    resetGame() {
+        this.flippedCards = []
+        this.matchedCards = []
+        this.pointsElement.textContent = ''
+        this.resetMovements()
+        this.board.reset()
+        this.resetTimer()
     }
 }
 
